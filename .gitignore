@@ -5,3 +5,5 @@ __pycache__/
 .DS_Store
 hoover.py
 .ha_token
+capture.sh
+capture/

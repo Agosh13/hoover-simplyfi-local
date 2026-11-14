@@ -28,6 +28,7 @@ from .const import (
     PHASES,
     PROGRAM_SETS,
     STATE_OFF,
+    STATE_REMOTE_READY,
 )
 from .coordinator import SimplyFiConfigEntry, SimplyFiCoordinator, WasherData
 from .entity import SimplyFiEntity
@@ -44,7 +45,7 @@ SENSORS: tuple[SimplyFiSensorDescription, ...] = (
     SimplyFiSensorDescription(
         key="state",
         device_class=SensorDeviceClass.ENUM,
-        options=[STATE_OFF, *dict.fromkeys(MACHINE_STATES.values())],
+        options=[STATE_OFF, STATE_REMOTE_READY, *dict.fromkeys(MACHINE_STATES.values())],
         value_fn=lambda d: d.state,
     ),
     SimplyFiSensorDescription(

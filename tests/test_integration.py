@@ -170,7 +170,7 @@ async def test_power_cycle_after_end_is_not_a_new_cycle(
         aioclient_mock.get(URL, text=payload(**fields))
         await tick(hass, entry)
         if fields["RemTime"] == "310":
-            assert state(hass, "sensor.lavatrice_state") == "finished"
+            assert state(hass, "sensor.lavatrice_state") == "idle"
             assert state(hass, "sensor.lavatrice_remaining_time") == "0"
 
     assert changes == ["off"], "una sola fine lavaggio"
@@ -202,3 +202,33 @@ async def test_program_name_follows_model_option(
     aioclient_mock.get(URL, text=payload(Pr="17"))
     await tick(hass, entry)
     assert state(hass, "sensor.lavatrice_program_name") == "unknown"
+
+
+async def test_remote_ready_and_real_end_through_end_phase(
+    hass: HomeAssistant, aioclient_mock
+) -> None:
+    """MachMd=2 con fase Fine: attesa comando remoto, oppure fine vera se segue un lavaggio."""
+    armed = {"MachMd": "2", "PrPh": "5", "RemTime": "310", "Pr": "15", "WiFiStatus": "1"}
+    aioclient_mock.get(URL, text=payload(**armed))
+    entry = MockConfigEntry(domain=DOMAIN, data={"host": HOST, "key": KEY})
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert state(hass, "sensor.lavatrice_state") == "remote_ready"
+    assert state(hass, "sensor.lavatrice_phase") == "stopped"
+    assert state(hass, "binary_sensor.lavatrice_cycle_running") == "off"
+
+    # L'app avvia un ciclo...
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(URL, text=payload(MachMd="2", PrPh="2", RemTime="96", WiFiStatus="1"))
+    await tick(hass, entry)
+    assert state(hass, "sensor.lavatrice_state") == "running"
+
+    # ...che termina passando per "in funzione + fase Fine": è una fine vera,
+    # e resta tale alle letture successive.
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(URL, text=payload(**armed))
+    for _ in range(2):
+        await tick(hass, entry)
+        assert state(hass, "sensor.lavatrice_state") == "finished"
+        assert state(hass, "sensor.lavatrice_phase") == "end"

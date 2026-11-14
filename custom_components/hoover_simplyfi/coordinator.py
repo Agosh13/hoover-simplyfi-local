@@ -27,7 +27,9 @@ from .const import (
     RUNNING_MODES,
     SCAN_INTERVAL,
     STATE_FINISHED,
+    STATE_IDLE,
     STATE_OFF,
+    STATE_REMOTE_READY,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,6 +57,8 @@ class WasherData:
     raw: dict[str, Any] = field(default_factory=dict)
     remtime_seconds: bool = False
     end_time: datetime | None = None
+    # Vero se lo stato "in funzione + fase Fine" segue un lavaggio vero.
+    after_run: bool = False
 
     @property
     def mode(self) -> int | None:
@@ -66,20 +70,28 @@ class WasherData:
 
     @property
     def _cycle_over(self) -> bool:
-        """Vero se la macchina dice "in funzione" ma il ciclo è già alla fase Fine.
+        """Vero se la macchina dice "in funzione" ma la fase è già "Fine".
 
-        Visto su una macchina reale: riaccesa dopo la fine del ciclo, riporta
-        di nuovo MachMd=2 con la fase ferma su "Fine" e un tempo rimanente
-        fasullo, finché non si cambia programma. Non è un lavaggio in corso.
+        Su una macchina reale MachMd=2 con fase "Fine" e un tempo rimanente
+        fasullo non è un lavaggio: è lo stato di riposo in cui la macchina
+        aspetta un comando dall'app (manopola su controllo remoto), e compare
+        anche riaccendendola dopo la fine di un ciclo.
         """
         return self.mode in RUNNING_MODES and self._phase_code == PHASE_END
+
+    @property
+    def _standby(self) -> bool:
+        """Stato di riposo, non la coda di un lavaggio appena terminato."""
+        return self._cycle_over and not self.after_run
 
     @property
     def state(self) -> str:
         if not self.online:
             return STATE_OFF
         if self._cycle_over:
-            return STATE_FINISHED
+            if self.after_run:
+                return STATE_FINISHED
+            return STATE_REMOTE_READY if self.remote_control else STATE_IDLE
         return MACHINE_STATES.get(self.mode or 0, STATE_OFF)
 
     @property
@@ -90,6 +102,8 @@ class WasherData:
     def phase(self) -> str | None:
         if not self.online:
             return None
+        if self._standby:
+            return PHASES[0]
         return PHASES.get(self._phase_code or 0)
 
     @property
@@ -174,6 +188,12 @@ class SimplyFiCoordinator(DataUpdateCoordinator[WasherData]):
 
         self._failures = 0
         data = WasherData(online=True, raw=raw, remtime_seconds=self._remtime_seconds)
+        previous = self.data
+        # Se la fase "Fine" arriva subito dopo un lavaggio in corso è la fine
+        # vera del ciclo; altrimenti è solo la macchina a riposo.
+        data.after_run = data._cycle_over and previous is not None and (
+            previous.running or (previous._cycle_over and previous.after_run)
+        )
         data.end_time = self._end_time(data)
         return data
 

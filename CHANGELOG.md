@@ -4,6 +4,26 @@ All notable changes to this project are listed here. Versions follow
 `MAJOR.MINOR.PATCH`; while the project is `0.x` it is experimental and any
 release may contain breaking changes.
 
+## 0.3.0 — 2026-11-14
+
+### Changed
+- The resting state in which the machine claims to be running while the phase
+  is "End" is no longer shown as *Finished*. It is now *Waiting for remote
+  command* when the dial is on remote control, and *Idle* otherwise. A cycle
+  that really ends is still reported as *Finished*, including when it ends by
+  passing through that state.
+- In that resting state the phase is shown as *Stopped*.
+
+### Added
+- New state **Waiting for remote command**.
+- [Protocol notes](docs/protocol-notes.md) for the Hoover LINK PRO: status
+  quirks, program table, and the start command sent by the official app.
+
+### Upgrade notes
+- Automations that trigger on the state becoming `finished` keep working. If
+  you relied on `finished` being shown while the machine was merely waiting on
+  the remote-control position, use `remote_ready` instead.
+
 ## 0.2.0 — 2026-11-14
 
 ### Fixed

@@ -43,7 +43,8 @@
           "delayed_start_selected": "Partenza ritardata selezionata",
           "delayed_start": "Partenza ritardata",
           "error": "Errore",
-          "finished": "Finito"
+          "finished": "Finito",
+          "remote_ready": "In attesa di comando remoto"
         }
       },
       "phase": {

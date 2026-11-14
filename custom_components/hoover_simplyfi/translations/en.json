@@ -43,7 +43,8 @@
           "delayed_start_selected": "Delayed start selected",
           "delayed_start": "Delayed start",
           "error": "Error",
-          "finished": "Finished"
+          "finished": "Finished",
+          "remote_ready": "Waiting for remote command"
         }
       },
       "phase": {

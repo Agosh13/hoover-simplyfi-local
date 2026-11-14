@@ -30,7 +30,7 @@ It is **read-only**. It does not start, stop or change cycles.
 | Entity | Meaning |
 |---|---|
 | Cycle running | on while a cycle is running or paused — the one to use for "finished" notifications |
-| State | off, idle, running, paused, delayed start, error, finished |
+| State | off, idle, waiting for remote command, running, paused, delayed start, error, finished |
 | Phase | pre-wash, wash, rinse, spin, … |
 | Remaining time | minutes until the end of the cycle |
 | Estimated end | clock time at which the cycle should end |
@@ -156,9 +156,11 @@ That is reported as **Off**, and the entities stay available. As soon as you
 switch it on, the state updates within about 30 seconds.
 
 **I switched the machine off and on after a wash and got a second "finished" notification.**
-Fixed in `0.2.0`. Some machines, when switched back on after a finished
-cycle, claim to be running again while the phase is still "End". That is no
-longer treated as a cycle in progress.
+Fixed in `0.2.0`. Some machines have a resting state in which they claim to be
+running while the phase is "End": it shows up when the machine is switched back
+on after a finished cycle, and while it waits for a command from the app. It is
+no longer treated as a cycle in progress. Since `0.3.0` it is shown as *Idle*
+or *Waiting for remote command* rather than *Finished*.
 
 **Will a Wi-Fi hiccup trigger a false "finished" notification?**
 It should not: a few missed readings are ignored and the last known state is
@@ -223,6 +225,12 @@ other consequence of its use. Do not rely on it for anything safety-related: it
 is a convenience, not a monitoring or safety system. A washing machine is a
 water- and mains-connected appliance — do not leave it unattended on the basis
 of what this integration reports.
+
+## Protocol notes
+
+What was learned about the local protocol on the tested machine — status
+quirks, the program table, and the commands the official app sends — is in
+[docs/protocol-notes.md](docs/protocol-notes.md).
 
 ## Credits
 

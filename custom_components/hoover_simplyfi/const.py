@@ -44,6 +44,8 @@ OFFLINE_AFTER_FAILURES = 4
 
 STATE_OFF = "off"
 STATE_FINISHED = "finished"
+STATE_IDLE = "idle"
+STATE_REMOTE_READY = "remote_ready"
 MACHINE_STATES = {
     1: "idle",
     2: "running",
