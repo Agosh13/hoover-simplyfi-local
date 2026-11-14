@@ -156,7 +156,7 @@ That is reported as **Off**, and the entities stay available. As soon as you
 switch it on, the state updates within about 30 seconds.
 
 **I switched the machine off and on after a wash and got a second "finished" notification.**
-Fixed in `0.1.0-alpha.2`. Some machines, when switched back on after a finished
+Fixed in `0.2.0`. Some machines, when switched back on after a finished
 cycle, claim to be running again while the phase is still "End". That is no
 longer treated as a cycle in progress.
 
@@ -189,6 +189,13 @@ expose the machine to the internet.
 **Is my model supported?**
 If it used the Hoover Wizard or Candy simply-Fi app, probably. Try it and open an
 issue with the model number and what you see, working or not.
+
+## Versions
+
+Versions follow `MAJOR.MINOR.PATCH` and are published as tags and GitHub
+releases; HACS offers them as updates. While the project is `0.x` it stays
+experimental and any release may contain breaking changes. See the
+[changelog](CHANGELOG.md).
 
 ## Known limitations
 
