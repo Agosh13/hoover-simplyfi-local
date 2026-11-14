@@ -1,0 +1,82 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Hoover/Candy simply-Fi washing machine",
+        "description": "Enter the washing machine's IP address. It must be switched on during setup; the encryption key is recovered automatically.",
+        "data": {
+          "host": "IP address",
+          "remtime_in_seconds": "Remaining time is reported in seconds"
+        },
+        "data_description": {
+          "remtime_in_seconds": "Leave off if the remaining time shown is correct. Turn on only if it reads 60 times too large."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Washing machine not reachable. Check that it is on and the IP address.",
+      "invalid_device": "The device answered, but it does not look like a simply-Fi washing machine."
+    },
+    "abort": {
+      "already_configured": "This washing machine is already configured."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "running": { "name": "Cycle running" },
+      "remote_control": { "name": "Remote control" }
+    },
+    "sensor": {
+      "state": {
+        "name": "State",
+        "state": {
+          "off": "Off",
+          "idle": "Idle",
+          "running": "Running",
+          "paused": "Paused",
+          "delayed_start_selected": "Delayed start selected",
+          "delayed_start": "Delayed start",
+          "error": "Error",
+          "finished": "Finished"
+        }
+      },
+      "phase": {
+        "name": "Phase",
+        "state": {
+          "stopped": "Stopped",
+          "prewash": "Pre-wash",
+          "wash": "Wash",
+          "rinse": "Rinse",
+          "last_rinse": "Last rinse",
+          "end": "End",
+          "drying": "Drying",
+          "error": "Error",
+          "steam": "Steam",
+          "good_night": "Hold (good night)",
+          "spin": "Spin"
+        }
+      },
+      "remaining_time": { "name": "Remaining time" },
+      "end_time": { "name": "Estimated end" },
+      "program": { "name": "Program" },
+      "temperature": { "name": "Temperature" },
+      "spin_speed": { "name": "Spin speed" },
+      "error": {
+        "name": "Error",
+        "state": {
+          "none": "None",
+          "unknown": "Unknown",
+          "door_lock": "Door lock",
+          "water_inlet": "Water inlet",
+          "drain": "Drain",
+          "water_level": "Water level (too much foam?)",
+          "unbalanced": "Unbalanced load",
+          "drum_rotation": "Drum rotation",
+          "drying": "Drying system",
+          "heating": "Water heating",
+          "electronics": "Electronics"
+        }
+      }
+    }
+  }
+}

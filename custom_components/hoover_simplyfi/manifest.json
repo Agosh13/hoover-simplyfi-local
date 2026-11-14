@@ -1,0 +1,12 @@
+{
+  "domain": "hoover_simplyfi",
+  "name": "Hoover/Candy simply-Fi (local)",
+  "codeowners": ["@Agosh13"],
+  "config_flow": true,
+  "documentation": "https://github.com/Agosh13/hoover-simplyfi-local",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Agosh13/hoover-simplyfi-local/issues",
+  "requirements": [],
+  "version": "0.1.0-alpha.1"
+}

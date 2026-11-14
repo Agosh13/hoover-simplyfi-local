@@ -1,0 +1,82 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Lavatrice Hoover/Candy simply-Fi",
+        "description": "Inserisci l'indirizzo IP della lavatrice. Deve essere accesa durante la configurazione; la chiave di cifratura viene ricavata automaticamente.",
+        "data": {
+          "host": "Indirizzo IP",
+          "remtime_in_seconds": "Il tempo rimanente è riportato in secondi"
+        },
+        "data_description": {
+          "remtime_in_seconds": "Lascia disattivato se il tempo rimanente mostrato è corretto. Attivalo solo se risulta 60 volte troppo grande."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Lavatrice non raggiungibile. Controlla che sia accesa e l'indirizzo IP.",
+      "invalid_device": "Il dispositivo ha risposto, ma non sembra una lavatrice simply-Fi."
+    },
+    "abort": {
+      "already_configured": "Questa lavatrice è già configurata."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "running": { "name": "Lavaggio in corso" },
+      "remote_control": { "name": "Controllo remoto" }
+    },
+    "sensor": {
+      "state": {
+        "name": "Stato",
+        "state": {
+          "off": "Spenta",
+          "idle": "Ferma",
+          "running": "In funzione",
+          "paused": "In pausa",
+          "delayed_start_selected": "Partenza ritardata selezionata",
+          "delayed_start": "Partenza ritardata",
+          "error": "Errore",
+          "finished": "Finito"
+        }
+      },
+      "phase": {
+        "name": "Fase",
+        "state": {
+          "stopped": "Fermo",
+          "prewash": "Prelavaggio",
+          "wash": "Lavaggio",
+          "rinse": "Risciacquo",
+          "last_rinse": "Ultimo risciacquo",
+          "end": "Fine",
+          "drying": "Asciugatura",
+          "error": "Errore",
+          "steam": "Vapore",
+          "good_night": "Attesa (buonanotte)",
+          "spin": "Centrifuga"
+        }
+      },
+      "remaining_time": { "name": "Tempo rimanente" },
+      "end_time": { "name": "Fine prevista" },
+      "program": { "name": "Programma" },
+      "temperature": { "name": "Temperatura" },
+      "spin_speed": { "name": "Centrifuga" },
+      "error": {
+        "name": "Errore",
+        "state": {
+          "none": "Nessuno",
+          "unknown": "Sconosciuto",
+          "door_lock": "Blocco porta",
+          "water_inlet": "Carico acqua",
+          "drain": "Scarico",
+          "water_level": "Livello acqua (troppa schiuma?)",
+          "unbalanced": "Carico sbilanciato",
+          "drum_rotation": "Rotazione cesto",
+          "drying": "Sistema di asciugatura",
+          "heating": "Riscaldamento acqua",
+          "electronics": "Elettronica"
+        }
+      }
+    }
+  }
+}
