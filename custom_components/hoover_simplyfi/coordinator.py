@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import logging
@@ -10,20 +11,27 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .api import SimplyFiClient, SimplyFiError
+from . import const
 from .const import (
+    CONF_ENABLE_CONTROL,
     CONF_KEY,
+    CONF_MODEL,
     CONF_REMTIME_SECONDS,
     DOMAIN,
     ERROR_CODES,
     MACHINE_STATES,
+    MODEL_GENERIC,
     OFFLINE_AFTER_FAILURES,
     PHASE_END,
     PHASES,
+    PROGRAM_SETS,
+    REMOTE_POSITIONS,
     RUNNING_MODES,
     SCAN_INTERVAL,
     STATE_FINISHED,
@@ -170,6 +178,75 @@ class SimplyFiCoordinator(DataUpdateCoordinator[WasherData]):
         )
         self._remtime_seconds: bool = entry.data.get(CONF_REMTIME_SECONDS, False)
         self._failures = 0
+        self.model: str = entry.options.get(CONF_MODEL, MODEL_GENERIC)
+        self.programs: dict[int, str] = PROGRAM_SETS.get(self.model, {})
+        # I comandi vanno attivati esplicitamente e richiedono un modello noto.
+        self.control_enabled: bool = bool(
+            entry.options.get(CONF_ENABLE_CONTROL, False) and self.programs
+        )
+        # Centrifuga scelta per il prossimo avvio (centinaia di giri);
+        # None = quella predefinita del programma.
+        self.spin_choice: int | None = None
+
+    @property
+    def can_command(self) -> bool:
+        """Vero se la macchina accetta un nuovo programma da remoto."""
+        data = self.data
+        return bool(data and data.remote_control and not data.running)
+
+    @property
+    def selected_program(self) -> int | None:
+        """Programma selezionato da remoto e pronto a partire."""
+        data = self.data
+        if not self.can_command or data.mode != 1:
+            return None
+        return data.program if data.program in self.programs else None
+
+    def _fail(self, key: str, **placeholders: str) -> HomeAssistantError:
+        return HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key=key,
+            translation_placeholders=placeholders or None,
+        )
+
+    async def _async_send(self, params: str) -> None:
+        if not self.control_enabled:
+            raise self._fail("control_disabled")
+        try:
+            await self.client.async_command(params)
+        except SimplyFiError as err:
+            raise self._fail("command_failed", error=str(err)) from err
+        await asyncio.sleep(const.COMMAND_SETTLE)
+        await self.async_refresh()
+
+    async def async_select_program(self, position: int) -> None:
+        """Seleziona un programma senza avviarlo."""
+        if not self.can_command:
+            raise self._fail("not_remote")
+        self.spin_choice = None
+        await self._async_send(f"Write=1&StSt=0&PrNm={position}&DelVl=0")
+
+    async def async_start(self) -> None:
+        """Avvia il programma selezionato, come fa l'app ufficiale."""
+        if not self.can_command:
+            raise self._fail("not_remote")
+        position = self.selected_program
+        if position is None:
+            raise self._fail("no_program")
+        default = _int(self.data.raw, "SpinSp") or 0
+        target = default if self.spin_choice is None else min(self.spin_choice, default)
+        await self._async_send(
+            f"Write=1&Pa=0&Sel=0&PrNm={position}&StSt=1&SpdTgt={target}"
+            f"&SpdDef={default}&Stm=0&RecipeId=0&CheckUpState=0"
+        )
+
+    async def async_stop(self) -> None:
+        """Ferma il ciclo, con lo stesso comando del tasto Stop dell'app."""
+        if not self.data or not self.data.online:
+            raise self._fail("not_remote")
+        await self._async_send(
+            f"Write=1&StSt=0&DelMd=0&PrNm={REMOTE_POSITIONS[self.model]}"
+        )
 
     async def _async_update_data(self) -> WasherData:
         try:

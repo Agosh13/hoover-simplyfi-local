@@ -114,6 +114,42 @@
           "auto_hygiene": "Auto-Hygiene (controllo remoto)"
         }
       }
+    },
+    "select": {
+      "program_select": {
+        "name": "Programma da avviare",
+        "state": {
+          "all_in_one_20": "20 °C",
+          "hygiene_60": "Igiene 60 °C",
+          "coloured_59": "Colorati 59'",
+          "rapid": "Rapido 14'/30'/44'",
+          "delicates": "Delicati",
+          "wool": "Lana",
+          "hand_wash_silk": "Lava a mano & Seta",
+          "rinse": "Risciacqui",
+          "drain_spin": "Scarico & Centrifuga",
+          "shirts": "Camicie",
+          "hygiene_pro_59": "Igiene PRO 59'",
+          "mixed": "Misti",
+          "eco_40_60": "ECO 40-60",
+          "cotton": "Cotone",
+          "auto_hygiene": "Auto-Hygiene (controllo remoto)"
+        }
+      },
+      "spin_select": {
+        "name": "Centrifuga da avviare",
+        "state": {
+          "default": "Predefinita del programma"
+        }
+      }
+    },
+    "button": {
+      "start": {
+        "name": "Avvia"
+      },
+      "stop": {
+        "name": "Stop"
+      }
     }
   },
   "options": {
@@ -121,10 +157,12 @@
       "init": {
         "title": "Opzioni lavatrice",
         "data": {
-          "model": "Modello"
+          "model": "Modello",
+          "enable_control": "Attiva i comandi (programma, avvio, stop)"
         },
         "data_description": {
-          "model": "Serve a mostrare il nome del programma. Se il tuo modello non è in elenco, lascia Generico: vedrai solo la posizione della manopola."
+          "model": "Serve a mostrare il nome del programma. Se il tuo modello non è in elenco, lascia Generico: vedrai solo la posizione della manopola.",
+          "enable_control": "Sperimentale. Aggiunge la scelta del programma e i pulsanti Avvia e Stop. Richiede un modello in elenco e funzionano solo con la manopola sul controllo remoto. Avviare una lavatrice a distanza è una tua responsabilità."
         }
       }
     }
@@ -135,6 +173,20 @@
         "generic": "Generico (solo posizione della manopola)",
         "hoover_link_pro": "Hoover LINK PRO (HLPS…TAMBE)"
       }
+    }
+  },
+  "exceptions": {
+    "control_disabled": {
+      "message": "I comandi non sono attivati nelle opzioni dell'integrazione."
+    },
+    "not_remote": {
+      "message": "La lavatrice non accetta comandi: deve essere accesa, ferma e con la manopola sul controllo remoto."
+    },
+    "no_program": {
+      "message": "Scegli prima un programma."
+    },
+    "command_failed": {
+      "message": "Comando non riuscito: {error}"
     }
   }
 }

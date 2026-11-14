@@ -1,4 +1,4 @@
-"""Client del protocollo HTTP locale Candy/Hoover simply-Fi (sola lettura)."""
+"""Client del protocollo HTTP locale Candy/Hoover simply-Fi."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Any
 import aiohttp
 
 READ_PATH = "/http-read.json?encrypted=1"
+WRITE_PATH = "/http-write.json"
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=8)
 RETRIES = 3
 RETRY_DELAY = 1.5
@@ -33,6 +34,10 @@ class SimplyFiConnectionError(SimplyFiError):
 
 class SimplyFiProtocolError(SimplyFiError):
     """Risposta non interpretabile."""
+
+
+class SimplyFiCommandError(SimplyFiError):
+    """La lavatrice ha rifiutato un comando."""
 
 
 def xor(data: bytes, key: str) -> bytes:
@@ -74,19 +79,22 @@ class SimplyFiClient:
         self._session = session
         self.host = host
         self.key = key
+        # Il modulo Wi-Fi serve una connessione alla volta: letture e comandi
+        # non devono mai sovrapporsi.
+        self._lock = asyncio.Lock()
 
-    async def _get(self, path: str) -> str:
+    async def _get(self, path: str, retries: int = RETRIES) -> str:
         """GET con ritentativi: il modulo accetta una connessione alla volta."""
         last: Exception | None = None
-        for attempt in range(RETRIES):
+        for attempt in range(retries):
             try:
-                async with self._session.get(
+                async with self._lock, self._session.get(
                     f"http://{self.host}{path}", timeout=REQUEST_TIMEOUT
                 ) as resp:
                     return (await resp.text(encoding="latin-1")).strip()
             except (aiohttp.ClientError, TimeoutError, OSError) as err:
                 last = err
-                if attempt < RETRIES - 1:
+                if attempt < retries - 1:
                     await asyncio.sleep(RETRY_DELAY * (attempt + 1))
         raise SimplyFiConnectionError(
             f"Lavatrice non raggiungibile su {self.host}: {last}"
@@ -125,3 +133,27 @@ class SimplyFiClient:
         if status is None:
             raise SimplyFiProtocolError("Stato non interpretabile")
         return status
+
+    async def async_command(self, params: str) -> None:
+        """Invia un comando. Un solo tentativo: un comando non si ripete alla cieca."""
+        if self.key is None:
+            await self.async_recover_key()
+        if self.key:
+            data = xor(params.encode(), self.key).hex().upper()
+            path = f"{WRITE_PATH}?encrypted=1&data={data}"
+        else:
+            path = f"{WRITE_PATH}?encrypted=0&{params}"
+        body = await self._get(path, retries=1)
+        if not body.startswith("{"):
+            try:
+                body = xor(bytes.fromhex(body), self.key or "").decode(
+                    "utf-8", "replace"
+                )
+            except ValueError as err:
+                raise SimplyFiProtocolError("Risposta non valida") from err
+        try:
+            response = json.loads(body).get("response")
+        except (ValueError, AttributeError) as err:
+            raise SimplyFiProtocolError("Risposta non valida") from err
+        if response != "SUCCESS":
+            raise SimplyFiCommandError(f"Comando rifiutato: {response}")

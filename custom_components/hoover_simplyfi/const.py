@@ -8,6 +8,8 @@ CONF_KEY = "key"
 CONF_REMTIME_SECONDS = "remtime_in_seconds"
 CONF_MODEL = "model"
 
+CONF_ENABLE_CONTROL = "enable_control"
+
 MODEL_GENERIC = "generic"
 
 # Nome del programma per ogni posizione della manopola, per modello.
@@ -34,6 +36,18 @@ PROGRAM_SETS: dict[str, dict[int, str]] = {
         15: "auto_hygiene",
     },
 }
+
+# Posizione che la manopola riporta in controllo remoto: l'app la usa nel
+# comando di stop.
+REMOTE_POSITIONS: dict[str, int] = {"hoover_link_pro": 15}
+
+# Centrifughe selezionabili all'avvio, in centinaia di giri (come `SpinSp`).
+# Quella effettiva non supera mai il valore predefinito del programma.
+SPIN_DEFAULT = "default"
+SPIN_CHOICES = (0, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+
+# Attesa dopo un comando prima di rileggere lo stato.
+COMMAND_SETTLE = 2.0
 
 SCAN_INTERVAL = timedelta(seconds=30)
 

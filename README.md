@@ -7,7 +7,8 @@
 > [disclaimer](#disclaimer) before installing.
 
 Read the status of a Hoover or Candy **simply-Fi** washing machine straight from
-your local network: no cloud, no account, no phone app.
+your local network — and, optionally, choose a program and start it: no cloud,
+no account, no phone app.
 
 ## Why this exists
 
@@ -23,7 +24,9 @@ The goal of this project is deliberately small:
 - depend on nothing outside your home: no vendor cloud, no app, no computer
   left switched on. It runs inside Home Assistant.
 
-It is **read-only**. It does not start, stop or change cycles.
+It is **read-only by default**. Choosing a program, starting and stopping are
+an optional, experimental feature that you have to switch on yourself: see
+[Commands](#commands-experimental).
 
 ## What you get
 
@@ -107,6 +110,36 @@ cycles that really reached the end, trigger on the state instead:
         to: finished
 ```
 
+## Commands (experimental)
+
+Off by default. To switch them on: integration → **Configure** → pick a listed
+**model** and tick **Enable commands**. You get four more entities:
+
+| Entity | What it does |
+|---|---|
+| Program to start | selects the program on the machine, **without starting it**; temperature, spin and duration of that program then show up in the sensors |
+| Spin speed to start | spin for the next start; *Program default* unless you lower it (it is never raised above the program's default) |
+| Start | starts the selected program |
+| Stop | stops the cycle |
+
+How it works in practice:
+
+1. Load the machine, close the door and turn the dial to the **remote-control**
+   position. Nothing can be commanded otherwise — that physical step is the
+   machine's own safety interlock, and this integration cannot bypass it.
+2. In Home Assistant choose the program, optionally the spin, and press Start
+   (or do the same from an automation, e.g. when electricity is cheap).
+
+Limits of this first version:
+
+- the **temperature** is always the program's default; options and delayed
+  start are not available;
+- **Stop** uses the command the official app sends, but it has not been
+  verified during a real cycle yet;
+- only for models with a known dial (see below).
+
+You are starting a real appliance remotely: read the [disclaimer](#disclaimer).
+
 ## Program names
 
 The machine only reports the **position** of the program dial. To show a name,
@@ -177,9 +210,13 @@ else queries it at the same moment (another script, another integration, a
 browser tab), requests time out. Let Home Assistant be the only one talking to it.
 
 **Can I start or stop a cycle from Home Assistant?**
-Not in this version. The protocol allows it (with the machine in remote-control
-mode), but commands are out of scope for the alpha: reading the status is safe,
-starting a physical machine by mistake is not.
+Yes since `0.4.0`, as an experimental feature that is off by default: see
+[Commands](#commands-experimental). The machine must be on the remote-control
+dial position.
+
+**The Start button is greyed out.**
+It is available only when the machine is on, not running, with the dial on
+remote control, and after you have chosen a program in *Program to start*.
 
 **Is the connection secure?**
 No more than the machine itself. The local protocol has no authentication, and
@@ -204,7 +241,8 @@ experimental and any release may contain breaking changes. See the
 - Alpha: one tested model, a few hours of real use.
 - The end of a real cycle has been verified only in automated tests with
   simulated data; behaviour at the end of a cycle may differ between models.
-- Read-only. No statistics, no options, no commands.
+- Commands are experimental: program, spin, start and stop only. No
+  temperature change, no options, no delayed start, no statistics.
 - Program names are known for one model family only.
 - Polls every 30 seconds, so changes show up with that delay.
 

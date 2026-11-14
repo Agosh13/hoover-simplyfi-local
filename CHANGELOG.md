@@ -4,6 +4,27 @@ All notable changes to this project are listed here. Versions follow
 `MAJOR.MINOR.PATCH`; while the project is `0.x` it is experimental and any
 release may contain breaking changes.
 
+## 0.4.0 — 2026-11-14
+
+### Added
+
+- **Commands (experimental, off by default).** Enable them from the
+  integration's Configure dialog; a listed model is required. New entities:
+  *Program to start* (selects the program without starting it), *Spin speed to
+  start*, *Start* and *Stop*. They work only with the dial on the
+  remote-control position.
+- Reads and commands are serialised, since the Wi-Fi module serves one
+  connection at a time.
+
+### Notes
+
+- Start always uses the program's default temperature; options and delayed
+  start are not supported.
+- Stop sends the command captured from the official app, which was not
+  verified during a real cycle.
+- Protocol notes: the first captured app command is the app's Stop button, not
+  a selection reset.
+
 ## 0.3.0 — 2026-11-14
 
 ### Changed

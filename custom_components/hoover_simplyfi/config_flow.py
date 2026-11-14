@@ -23,6 +23,7 @@ from homeassistant.helpers.selector import (
 
 from .api import SimplyFiClient, SimplyFiConnectionError, SimplyFiProtocolError
 from .const import (
+    CONF_ENABLE_CONTROL,
     CONF_KEY,
     CONF_MODEL,
     CONF_REMTIME_SECONDS,
@@ -48,7 +49,10 @@ DATA_SCHEMA = vol.Schema(
 )
 
 OPTIONS_SCHEMA = vol.Schema(
-    {vol.Required(CONF_MODEL, default=MODEL_GENERIC): MODEL_SELECTOR}
+    {
+        vol.Required(CONF_MODEL, default=MODEL_GENERIC): MODEL_SELECTOR,
+        vol.Required(CONF_ENABLE_CONTROL, default=False): bool,
+    }
 )
 
 
@@ -96,7 +100,7 @@ class SimplyFiConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class SimplyFiOptionsFlow(OptionsFlow):
-    """Opzioni: scelta del modello, da cui dipendono i nomi dei programmi."""
+    """Opzioni: modello (nomi dei programmi) e attivazione dei comandi."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

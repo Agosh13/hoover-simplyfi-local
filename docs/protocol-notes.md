@@ -5,9 +5,9 @@ the simply-Fi local API in
 [dandwhelan/candy-hoover-local](https://github.com/dandwhelan/candy-hoover-local/blob/main/PROTOCOL.md);
 only what differs from it, or was confirmed on this model, is listed here.
 
-The integration itself is read-only. The commands below are documented for
-reference: they were either observed from the official app or used to map the
-programs, and none of them is sent by the integration.
+The integration is read-only unless commands are enabled in its options. When
+they are, it sends exactly the commands below: the program selection, and the
+start and stop observed from the official app.
 
 ## Transport
 
@@ -83,11 +83,15 @@ unknown (probably app-only programs): 16 → 1 min, no spin; 17 → 30 °C, no s
 Captured from the iOS app (`hoover-ios/3.9.0`). The app sends the `data`
 parameter as **lowercase** hex and keeps the connection alive.
 
-Before starting, it clears the selection:
+**Stop** button, pressed while the machine was in the resting state described
+above (which the app shows as a cycle in progress):
 
 ```
 Write=1&StSt=0&DelMd=0&PrNm=15
 ```
+
+It was not sent during a real cycle, so its effect on a running wash is
+unverified.
 
 Start of program 2 with the spin lowered from the default 1200 to 900 rpm,
 temperature left at its default:
@@ -101,4 +105,5 @@ no `PrStr`, no option mask. The temperature parameter is omitted when unchanged.
 
 On this model the app offers **stop** but no pause.
 
-Not captured yet: stop, a changed temperature, options, delayed start.
+Not captured yet: stop during a real cycle, a changed temperature, options,
+delayed start.

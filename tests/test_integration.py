@@ -232,3 +232,160 @@ async def test_remote_ready_and_real_end_through_end_phase(
         await tick(hass, entry)
         assert state(hass, "sensor.lavatrice_state") == "finished"
         assert state(hass, "sensor.lavatrice_phase") == "end"
+
+
+# --- comandi -----------------------------------------------------------------
+
+CONTROL = {"model": "hoover_link_pro", "enable_control": True}
+READY = dict(WiFiStatus="1", MachMd="2", Pr="15", PrPh="5", Temp="0", SpinSp="0", RemTime="310")
+SELECTED = dict(WiFiStatus="1", MachMd="1", Pr="3", PrPh="0", Temp="40", SpinSp="8", RemTime="59")
+PROGRAM = "select.lavatrice_program_to_start"
+SPIN = "select.lavatrice_spin_speed_to_start"
+START = "button.lavatrice_start"
+STOP = "button.lavatrice_stop"
+
+
+def write_url(params: str) -> str:
+    data = xor(params.encode(), KEY).hex().upper()
+    return f"http://{HOST}/http-write.json?encrypted=1&data={data}"
+
+
+def reply(response: str = "SUCCESS") -> str:
+    return xor(('{"response":"%s"}' % response).encode(), KEY).hex().upper()
+
+
+async def setup_control(hass, aioclient_mock, monkeypatch, status, options=CONTROL):
+    monkeypatch.setattr("custom_components.hoover_simplyfi.const.COMMAND_SETTLE", 0)
+    aioclient_mock.get(URL, text=payload(**status))
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={"host": HOST, "key": KEY}, options=options
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry
+
+
+def writes(aioclient_mock) -> list[str]:
+    """Comandi inviati, decifrati."""
+    out = []
+    for _method, url, _data, _headers in aioclient_mock.mock_calls:
+        if "http-write" in str(url):
+            out.append(xor(bytes.fromhex(url.query["data"]), KEY).decode())
+    return out
+
+
+async def test_commands_are_off_by_default(hass: HomeAssistant, aioclient_mock, monkeypatch) -> None:
+    await setup_control(
+        hass, aioclient_mock, monkeypatch, READY, {"model": "hoover_link_pro"}
+    )
+    assert hass.states.get(PROGRAM) is None
+    assert hass.states.get(START) is None
+    assert hass.states.get(STOP) is None
+
+
+async def test_commands_need_a_known_model(hass: HomeAssistant, aioclient_mock, monkeypatch) -> None:
+    await setup_control(
+        hass, aioclient_mock, monkeypatch, READY,
+        {"model": "generic", "enable_control": True},
+    )
+    assert hass.states.get(START) is None
+
+
+async def test_select_program_does_not_start(hass: HomeAssistant, aioclient_mock, monkeypatch) -> None:
+    await setup_control(hass, aioclient_mock, monkeypatch, READY)
+    # In attesa di comando: nessun programma scelto, Avvia non disponibile.
+    assert state(hass, PROGRAM) == "unknown"
+    assert state(hass, START) == "unavailable"
+
+    cmd = "Write=1&StSt=0&PrNm=3&DelVl=0"
+    aioclient_mock.get(write_url(cmd), text=reply())
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(write_url(cmd), text=reply())
+    aioclient_mock.get(URL, text=payload(**SELECTED))
+    await hass.services.async_call(
+        "select", "select_option",
+        {"entity_id": PROGRAM, "option": "coloured_59"}, blocking=True,
+    )
+    await hass.async_block_till_done()
+    assert writes(aioclient_mock) == [cmd]
+    assert state(hass, PROGRAM) == "coloured_59"
+    assert state(hass, START) != "unavailable"
+    assert state(hass, "binary_sensor.lavatrice_cycle_running") == "off"
+
+
+async def test_start_sends_the_app_command(hass: HomeAssistant, aioclient_mock, monkeypatch) -> None:
+    await setup_control(hass, aioclient_mock, monkeypatch, SELECTED)
+    # Centrifuga abbassata a 600; una richiesta sopra il predefinito viene limitata.
+    await hass.services.async_call(
+        "select", "select_option", {"entity_id": SPIN, "option": "600"}, blocking=True
+    )
+    cmd = (
+        "Write=1&Pa=0&Sel=0&PrNm=3&StSt=1&SpdTgt=6&SpdDef=8"
+        "&Stm=0&RecipeId=0&CheckUpState=0"
+    )
+    aioclient_mock.get(write_url(cmd), text=reply())
+    await hass.services.async_call(
+        "button", "press", {"entity_id": START}, blocking=True
+    )
+    assert writes(aioclient_mock) == [cmd]
+
+
+async def test_start_clamps_spin_to_program_default(hass: HomeAssistant, aioclient_mock, monkeypatch) -> None:
+    await setup_control(hass, aioclient_mock, monkeypatch, SELECTED)
+    await hass.services.async_call(
+        "select", "select_option", {"entity_id": SPIN, "option": "1300"}, blocking=True
+    )
+    cmd = (
+        "Write=1&Pa=0&Sel=0&PrNm=3&StSt=1&SpdTgt=8&SpdDef=8"
+        "&Stm=0&RecipeId=0&CheckUpState=0"
+    )
+    aioclient_mock.get(write_url(cmd), text=reply())
+    await hass.services.async_call(
+        "button", "press", {"entity_id": START}, blocking=True
+    )
+    assert writes(aioclient_mock) == [cmd]
+
+
+async def test_no_start_without_remote_control_or_while_running(
+    hass: HomeAssistant, aioclient_mock, monkeypatch
+) -> None:
+    from homeassistant.exceptions import HomeAssistantError
+
+    # Manopola non sul controllo remoto.
+    entry = await setup_control(
+        hass, aioclient_mock, monkeypatch, dict(SELECTED, WiFiStatus="0")
+    )
+    assert state(hass, START) == "unavailable"
+    assert state(hass, PROGRAM) == "unavailable"
+    with pytest.raises(HomeAssistantError):
+        await entry.runtime_data.async_start()
+    with pytest.raises(HomeAssistantError):
+        await entry.runtime_data.async_select_program(3)
+
+    # Lavaggio in corso, anche se in controllo remoto.
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(URL, text=payload(WiFiStatus="1"))
+    await tick(hass, entry)
+    assert state(hass, START) == "unavailable"
+    with pytest.raises(HomeAssistantError):
+        await entry.runtime_data.async_start()
+    assert writes(aioclient_mock) == []
+
+
+async def test_stop_and_rejected_command(hass: HomeAssistant, aioclient_mock, monkeypatch) -> None:
+    from homeassistant.exceptions import HomeAssistantError
+
+    await setup_control(hass, aioclient_mock, monkeypatch, dict(WiFiStatus="1"))
+    cmd = "Write=1&StSt=0&DelMd=0&PrNm=15"
+    aioclient_mock.get(write_url(cmd), text=reply())
+    await hass.services.async_call("button", "press", {"entity_id": STOP}, blocking=True)
+    assert writes(aioclient_mock) == [cmd]
+
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(URL, text=payload(WiFiStatus="1"))
+    aioclient_mock.get(write_url(cmd), text=reply("ERROR"))
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            "button", "press", {"entity_id": STOP}, blocking=True
+        )
