@@ -6,6 +6,34 @@ DOMAIN = "hoover_simplyfi"
 
 CONF_KEY = "key"
 CONF_REMTIME_SECONDS = "remtime_in_seconds"
+CONF_MODEL = "model"
+
+MODEL_GENERIC = "generic"
+
+# Nome del programma per ogni posizione della manopola, per modello.
+# La posizione è il campo `Pr` dello stato. Si aggiungono solo le posizioni
+# verificate: quelle sconosciute restano senza nome.
+PROGRAM_SETS: dict[str, dict[int, str]] = {
+    # Hoover LINK PRO (HLPS...TAMBE). Verificato su HLPS139TAMBE-11 selezionando
+    # ogni posizione da remoto e confrontando i valori con la tabella del manuale.
+    "hoover_link_pro": {
+        1: "all_in_one_20",
+        2: "hygiene_60",
+        3: "coloured_59",
+        4: "rapid",
+        5: "delicates",
+        6: "wool",
+        7: "hand_wash_silk",
+        8: "rinse",
+        9: "drain_spin",
+        10: "shirts",
+        11: "hygiene_pro_59",
+        12: "mixed",
+        13: "eco_40_60",
+        14: "cotton",
+        15: "auto_hygiene",
+    },
+}
 
 SCAN_INTERVAL = timedelta(seconds=30)
 
@@ -15,6 +43,7 @@ SCAN_INTERVAL = timedelta(seconds=30)
 OFFLINE_AFTER_FAILURES = 4
 
 STATE_OFF = "off"
+STATE_FINISHED = "finished"
 MACHINE_STATES = {
     1: "idle",
     2: "running",
@@ -26,6 +55,7 @@ MACHINE_STATES = {
     8: "finished",
 }
 RUNNING_MODES = (2, 3)
+PHASE_END = 5
 
 PHASES = {
     0: "stopped",

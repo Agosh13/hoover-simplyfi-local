@@ -6,10 +6,12 @@
         "description": "Enter the washing machine's IP address. It must be switched on during setup; the encryption key is recovered automatically.",
         "data": {
           "host": "IP address",
-          "remtime_in_seconds": "Remaining time is reported in seconds"
+          "remtime_in_seconds": "Remaining time is reported in seconds",
+          "model": "Model"
         },
         "data_description": {
-          "remtime_in_seconds": "Leave off if the remaining time shown is correct. Turn on only if it reads 60 times too large."
+          "remtime_in_seconds": "Leave off if the remaining time shown is correct. Turn on only if it reads 60 times too large.",
+          "model": "Used to show the program name. If your model is not listed, leave Generic: you will only see the dial position."
         }
       }
     },
@@ -23,8 +25,12 @@
   },
   "entity": {
     "binary_sensor": {
-      "running": { "name": "Cycle running" },
-      "remote_control": { "name": "Remote control" }
+      "running": {
+        "name": "Cycle running"
+      },
+      "remote_control": {
+        "name": "Remote control"
+      }
     },
     "sensor": {
       "state": {
@@ -56,11 +62,21 @@
           "spin": "Spin"
         }
       },
-      "remaining_time": { "name": "Remaining time" },
-      "end_time": { "name": "Estimated end" },
-      "program": { "name": "Program" },
-      "temperature": { "name": "Temperature" },
-      "spin_speed": { "name": "Spin speed" },
+      "remaining_time": {
+        "name": "Remaining time"
+      },
+      "end_time": {
+        "name": "Estimated end"
+      },
+      "program": {
+        "name": "Program position"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "spin_speed": {
+        "name": "Spin speed"
+      },
       "error": {
         "name": "Error",
         "state": {
@@ -76,6 +92,47 @@
           "heating": "Water heating",
           "electronics": "Electronics"
         }
+      },
+      "program_name": {
+        "name": "Program name",
+        "state": {
+          "all_in_one_20": "20 °C",
+          "hygiene_60": "Hygiene 60 °C",
+          "coloured_59": "Coloured 59'",
+          "rapid": "Rapid 14'/30'/44'",
+          "delicates": "Delicates",
+          "wool": "Wool",
+          "hand_wash_silk": "Hand wash & Silk",
+          "rinse": "Rinse",
+          "drain_spin": "Drain & Spin",
+          "shirts": "Shirts",
+          "hygiene_pro_59": "Hygiene PRO 59'",
+          "mixed": "Mixed",
+          "eco_40_60": "ECO 40-60",
+          "cotton": "Cotton",
+          "auto_hygiene": "Auto-Hygiene (remote control)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Washing machine options",
+        "data": {
+          "model": "Model"
+        },
+        "data_description": {
+          "model": "Used to show the program name. If your model is not listed, leave Generic: you will only see the dial position."
+        }
+      }
+    }
+  },
+  "selector": {
+    "model": {
+      "options": {
+        "generic": "Generic (dial position only)",
+        "hoover_link_pro": "Hoover LINK PRO (HLPS…TAMBE)"
       }
     }
   }

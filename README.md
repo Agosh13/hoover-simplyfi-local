@@ -34,7 +34,8 @@ It is **read-only**. It does not start, stop or change cycles.
 | Phase | pre-wash, wash, rinse, spin, … |
 | Remaining time | minutes until the end of the cycle |
 | Estimated end | clock time at which the cycle should end |
-| Program | position of the program dial |
+| Program name | name of the selected program (models with a known dial, see [Program names](#program-names)) |
+| Program position | position of the program dial |
 | Temperature, Spin speed | settings of the current cycle |
 | Error, Remote control | diagnostics |
 
@@ -68,7 +69,7 @@ Copy `custom_components/hoover_simplyfi` into your Home Assistant
 
 1. Switch the washing machine **on**.
 2. Settings → Devices & services → **Add integration** → "Hoover/Candy simply-Fi".
-3. Enter the washing machine's IP address.
+3. Enter the washing machine's IP address and pick your **model**, if listed.
 
 That is all: the encryption key is recovered automatically. Give the machine a
 fixed IP address (a DHCP reservation on your router), otherwise the integration
@@ -94,6 +95,36 @@ automation:
 Check the exact entity id in your installation (it depends on your language),
 and replace `notify.notify` with your phone's notify service, for example
 `notify.mobile_app_my_iphone`.
+
+The example above fires whenever a cycle stops being in progress, including
+when you switch the machine off halfway through. If you only want a message for
+cycles that really reached the end, trigger on the state instead:
+
+```yaml
+    triggers:
+      - trigger: state
+        entity_id: sensor.lavatrice_state
+        to: finished
+```
+
+## Program names
+
+The machine only reports the **position** of the program dial. To show a name,
+the integration needs to know the dial of your model. Choose the model during
+setup, or later from the integration's **Configure** button.
+
+| Model | Status |
+|---|---|
+| Hoover LINK PRO (`HLPS…TAMBE`) | 15 positions verified on `HLPS139TAMBE-11` |
+| Anything else | choose *Generic*: you get the dial position only |
+
+Hoover LINK PRO dial: 1 20 °C · 2 Hygiene 60 °C · 3 Coloured 59' · 4 Rapid
+14'/30'/44' · 5 Delicates · 6 Wool · 7 Hand wash & Silk · 8 Rinse · 9 Drain &
+Spin · 10 Shirts · 11 Hygiene PRO 59' · 12 Mixed · 13 ECO 40-60 · 14 Cotton ·
+15 Auto-Hygiene (the position reported while the dial is on remote control).
+
+Want your model added? Open an issue with the model number and the list of
+programs in dial order.
 
 ## FAQ
 
@@ -123,6 +154,11 @@ No. Everything happens between Home Assistant and the machine on your network.
 When the machine is switched off at its panel, its Wi-Fi module stops answering.
 That is reported as **Off**, and the entities stay available. As soon as you
 switch it on, the state updates within about 30 seconds.
+
+**I switched the machine off and on after a wash and got a second "finished" notification.**
+Fixed in `0.1.0-alpha.2`. Some machines, when switched back on after a finished
+cycle, claim to be running again while the phase is still "End". That is no
+longer treated as a cycle in progress.
 
 **Will a Wi-Fi hiccup trigger a false "finished" notification?**
 It should not: a few missed readings are ignored and the last known state is
@@ -160,6 +196,7 @@ issue with the model number and what you see, working or not.
 - The end of a real cycle has been verified only in automated tests with
   simulated data; behaviour at the end of a cycle may differ between models.
 - Read-only. No statistics, no options, no commands.
+- Program names are known for one model family only.
 - Polls every 30 seconds, so changes show up with that delay.
 
 ## Disclaimer

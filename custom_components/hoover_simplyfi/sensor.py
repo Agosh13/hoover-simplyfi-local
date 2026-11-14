@@ -20,7 +20,15 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import ERROR_CODES, MACHINE_STATES, PHASES, STATE_OFF
+from .const import (
+    CONF_MODEL,
+    ERROR_CODES,
+    MACHINE_STATES,
+    MODEL_GENERIC,
+    PHASES,
+    PROGRAM_SETS,
+    STATE_OFF,
+)
 from .coordinator import SimplyFiConfigEntry, SimplyFiCoordinator, WasherData
 from .entity import SimplyFiEntity
 
@@ -88,7 +96,11 @@ async def async_setup_entry(
 ) -> None:
     """Crea i sensori."""
     coordinator = entry.runtime_data
-    async_add_entities(SimplyFiSensor(coordinator, desc) for desc in SENSORS)
+    entities: list[SensorEntity] = [SimplyFiSensor(coordinator, d) for d in SENSORS]
+    programs = PROGRAM_SETS.get(entry.options.get(CONF_MODEL, MODEL_GENERIC))
+    if programs:
+        entities.append(SimplyFiProgramNameSensor(coordinator, programs))
+    async_add_entities(entities)
 
 
 class SimplyFiSensor(SimplyFiEntity, SensorEntity):
@@ -111,3 +123,21 @@ class SimplyFiSensor(SimplyFiEntity, SensorEntity):
         if self.entity_description.key != "error":
             return None
         return {"code": self.coordinator.data.error_code}
+
+
+class SimplyFiProgramNameSensor(SimplyFiEntity, SensorEntity):
+    """Nome del programma, per i modelli di cui si conosce la manopola."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+
+    def __init__(
+        self, coordinator: SimplyFiCoordinator, programs: dict[int, str]
+    ) -> None:
+        super().__init__(coordinator, "program_name")
+        self._programs = programs
+        self._attr_options = list(dict.fromkeys(programs.values()))
+
+    @property
+    def native_value(self) -> str | None:
+        position = self.coordinator.data.program
+        return None if position is None else self._programs.get(position)

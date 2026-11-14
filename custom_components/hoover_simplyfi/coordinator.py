@@ -22,9 +22,11 @@ from .const import (
     ERROR_CODES,
     MACHINE_STATES,
     OFFLINE_AFTER_FAILURES,
+    PHASE_END,
     PHASES,
     RUNNING_MODES,
     SCAN_INTERVAL,
+    STATE_FINISHED,
     STATE_OFF,
 )
 
@@ -59,26 +61,44 @@ class WasherData:
         return _int(self.raw, "MachMd") if self.online else None
 
     @property
+    def _phase_code(self) -> int | None:
+        return _int(self.raw, "PrPh") if self.online else None
+
+    @property
+    def _cycle_over(self) -> bool:
+        """Vero se la macchina dice "in funzione" ma il ciclo è già alla fase Fine.
+
+        Visto su una macchina reale: riaccesa dopo la fine del ciclo, riporta
+        di nuovo MachMd=2 con la fase ferma su "Fine" e un tempo rimanente
+        fasullo, finché non si cambia programma. Non è un lavaggio in corso.
+        """
+        return self.mode in RUNNING_MODES and self._phase_code == PHASE_END
+
+    @property
     def state(self) -> str:
         if not self.online:
             return STATE_OFF
+        if self._cycle_over:
+            return STATE_FINISHED
         return MACHINE_STATES.get(self.mode or 0, STATE_OFF)
 
     @property
     def running(self) -> bool:
-        return self.mode in RUNNING_MODES
+        return self.mode in RUNNING_MODES and not self._cycle_over
 
     @property
     def phase(self) -> str | None:
         if not self.online:
             return None
-        return PHASES.get(_int(self.raw, "PrPh") or 0)
+        return PHASES.get(self._phase_code or 0)
 
     @property
     def remaining_minutes(self) -> int | None:
         if not self.online:
             return None
         rem = _int(self.raw, "RemTime")
+        if self._cycle_over:
+            return 0
         if rem is None:
             return None
         return round(rem / 60) if self.remtime_seconds else rem

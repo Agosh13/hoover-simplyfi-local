@@ -6,10 +6,12 @@
         "description": "Inserisci l'indirizzo IP della lavatrice. Deve essere accesa durante la configurazione; la chiave di cifratura viene ricavata automaticamente.",
         "data": {
           "host": "Indirizzo IP",
-          "remtime_in_seconds": "Il tempo rimanente è riportato in secondi"
+          "remtime_in_seconds": "Il tempo rimanente è riportato in secondi",
+          "model": "Modello"
         },
         "data_description": {
-          "remtime_in_seconds": "Lascia disattivato se il tempo rimanente mostrato è corretto. Attivalo solo se risulta 60 volte troppo grande."
+          "remtime_in_seconds": "Lascia disattivato se il tempo rimanente mostrato è corretto. Attivalo solo se risulta 60 volte troppo grande.",
+          "model": "Serve a mostrare il nome del programma. Se il tuo modello non è in elenco, lascia Generico: vedrai solo la posizione della manopola."
         }
       }
     },
@@ -23,8 +25,12 @@
   },
   "entity": {
     "binary_sensor": {
-      "running": { "name": "Lavaggio in corso" },
-      "remote_control": { "name": "Controllo remoto" }
+      "running": {
+        "name": "Lavaggio in corso"
+      },
+      "remote_control": {
+        "name": "Controllo remoto"
+      }
     },
     "sensor": {
       "state": {
@@ -56,11 +62,21 @@
           "spin": "Centrifuga"
         }
       },
-      "remaining_time": { "name": "Tempo rimanente" },
-      "end_time": { "name": "Fine prevista" },
-      "program": { "name": "Programma" },
-      "temperature": { "name": "Temperatura" },
-      "spin_speed": { "name": "Centrifuga" },
+      "remaining_time": {
+        "name": "Tempo rimanente"
+      },
+      "end_time": {
+        "name": "Fine prevista"
+      },
+      "program": {
+        "name": "Posizione programma"
+      },
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "spin_speed": {
+        "name": "Centrifuga"
+      },
       "error": {
         "name": "Errore",
         "state": {
@@ -76,6 +92,47 @@
           "heating": "Riscaldamento acqua",
           "electronics": "Elettronica"
         }
+      },
+      "program_name": {
+        "name": "Nome programma",
+        "state": {
+          "all_in_one_20": "20 °C",
+          "hygiene_60": "Igiene 60 °C",
+          "coloured_59": "Colorati 59'",
+          "rapid": "Rapido 14'/30'/44'",
+          "delicates": "Delicati",
+          "wool": "Lana",
+          "hand_wash_silk": "Lava a mano & Seta",
+          "rinse": "Risciacqui",
+          "drain_spin": "Scarico & Centrifuga",
+          "shirts": "Camicie",
+          "hygiene_pro_59": "Igiene PRO 59'",
+          "mixed": "Misti",
+          "eco_40_60": "ECO 40-60",
+          "cotton": "Cotone",
+          "auto_hygiene": "Auto-Hygiene (controllo remoto)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni lavatrice",
+        "data": {
+          "model": "Modello"
+        },
+        "data_description": {
+          "model": "Serve a mostrare il nome del programma. Se il tuo modello non è in elenco, lascia Generico: vedrai solo la posizione della manopola."
+        }
+      }
+    }
+  },
+  "selector": {
+    "model": {
+      "options": {
+        "generic": "Generico (solo posizione della manopola)",
+        "hoover_link_pro": "Hoover LINK PRO (HLPS…TAMBE)"
       }
     }
   }

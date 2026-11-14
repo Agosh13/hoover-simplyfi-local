@@ -64,6 +64,7 @@ async def test_config_flow(hass: HomeAssistant, aioclient_mock) -> None:
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"] == {"host": HOST, "key": KEY, "remtime_in_seconds": False}
+    assert result["options"] == {"model": "generic"}
 
 
 async def test_config_flow_errors(hass: HomeAssistant, aioclient_mock) -> None:
@@ -134,3 +135,70 @@ async def test_setup_while_washer_off(hass: HomeAssistant, aioclient_mock) -> No
     aioclient_mock.get(URL, text=payload(MachMd="1", PrPh="0", RemTime="0"))
     await tick(hass, entry)
     assert state(hass, "sensor.lavatrice_state") == "idle"
+
+
+async def test_power_cycle_after_end_is_not_a_new_cycle(
+    hass: HomeAssistant, aioclient_mock
+) -> None:
+    """Caso reale: riaccesa a ciclo finito, la macchina dice di nuovo "in funzione".
+
+    Riporta MachMd=2 con la fase ferma su Fine e un tempo rimanente fasullo.
+    Non deve risultare un lavaggio in corso, altrimenti quando poi torna ferma
+    parte una seconda notifica di fine lavaggio.
+    """
+    aioclient_mock.get(URL, text=payload(MachMd="2", PrPh="3", RemTime="3"))
+    entry = MockConfigEntry(domain=DOMAIN, data={"host": HOST, "key": KEY})
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert state(hass, "binary_sensor.lavatrice_cycle_running") == "on"
+
+    changes: list[str] = []
+    hass.bus.async_listen(
+        "state_changed",
+        lambda e: changes.append(e.data["new_state"].state)
+        if e.data["entity_id"] == "binary_sensor.lavatrice_cycle_running"
+        else None,
+    )
+
+    for fields in (
+        {"MachMd": "7", "PrPh": "5", "RemTime": "0"},  # fine reale
+        {"MachMd": "2", "PrPh": "5", "RemTime": "310"},  # riaccesa: falso "in funzione"
+        {"MachMd": "1", "PrPh": "0", "RemTime": "131", "Pr": "15"},  # ferma
+    ):
+        aioclient_mock.clear_requests()
+        aioclient_mock.get(URL, text=payload(**fields))
+        await tick(hass, entry)
+        if fields["RemTime"] == "310":
+            assert state(hass, "sensor.lavatrice_state") == "finished"
+            assert state(hass, "sensor.lavatrice_remaining_time") == "0"
+
+    assert changes == ["off"], "una sola fine lavaggio"
+    assert state(hass, "sensor.lavatrice_state") == "idle"
+
+
+async def test_program_name_follows_model_option(
+    hass: HomeAssistant, aioclient_mock
+) -> None:
+    aioclient_mock.get(URL, text=payload(Pr="13"))
+    entry = MockConfigEntry(domain=DOMAIN, data={"host": HOST, "key": KEY})
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.lavatrice_program_name") is None
+    assert state(hass, "sensor.lavatrice_program_position") == "13"
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] is FlowResultType.FORM
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"model": "hoover_link_pro"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert state(hass, "sensor.lavatrice_program_name") == "eco_40_60"
+
+    # Posizione nascosta, senza nome noto.
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(URL, text=payload(Pr="17"))
+    await tick(hass, entry)
+    assert state(hass, "sensor.lavatrice_program_name") == "unknown"
