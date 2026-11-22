@@ -187,6 +187,9 @@ class SimplyFiCoordinator(DataUpdateCoordinator[WasherData]):
         # Centrifuga scelta per il prossimo avvio (centinaia di giri);
         # None = quella predefinita del programma.
         self.spin_choice: int | None = None
+        # Ritardo di partenza in ore (0 = avvia subito), come l'app e il
+        # protocollo documentato: DelMd=1&DelVl=<ore>, senza StSt=1.
+        self.delay_hours: int = 0
 
     @property
     def can_command(self) -> bool:
@@ -227,17 +230,28 @@ class SimplyFiCoordinator(DataUpdateCoordinator[WasherData]):
         await self._async_send(f"Write=1&StSt=0&PrNm={position}&DelVl=0")
 
     async def async_start(self) -> None:
-        """Avvia il programma selezionato, come fa l'app ufficiale."""
+        """Avvia il programma selezionato, subito o dopo il ritardo impostato."""
         if not self.can_command:
             raise self._fail("not_remote")
         position = self.selected_program
         if position is None:
             raise self._fail("no_program")
-        default = _int(self.data.raw, "SpinSp") or 0
-        target = default if self.spin_choice is None else min(self.spin_choice, default)
+        # Come l'app: la centrifuga si invia solo se diversa da quella
+        # predefinita, e mai per i programmi che non ne hanno una (255).
+        default = _int(self.data.raw, "SpinSp")
+        spin = ""
+        if default is not None and self.spin_choice is not None:
+            target = min(self.spin_choice, default)
+            if target != default:
+                spin = f"&SpdTgt={target}&SpdDef={default}"
+        if self.delay_hours:
+            # Con il ritardo la macchina lo tiene in attesa e avvia da sola.
+            start = f"&DelMd=1&DelVl={self.delay_hours}"
+        else:
+            start = "&StSt=1"
         await self._async_send(
-            f"Write=1&Pa=0&Sel=0&PrNm={position}&StSt=1&SpdTgt={target}"
-            f"&SpdDef={default}&Stm=0&RecipeId=0&CheckUpState=0"
+            f"Write=1&Pa=0&Sel=0&PrNm={position}{start}{spin}"
+            "&Stm=0&RecipeId=0&CheckUpState=0"
         )
 
     async def async_stop(self) -> None:

@@ -316,7 +316,7 @@ async def test_select_program_does_not_start(hass: HomeAssistant, aioclient_mock
 
 async def test_start_sends_the_app_command(hass: HomeAssistant, aioclient_mock, monkeypatch) -> None:
     await setup_control(hass, aioclient_mock, monkeypatch, SELECTED)
-    # Centrifuga abbassata a 600; una richiesta sopra il predefinito viene limitata.
+    # Centrifuga abbassata a 600: va inviata insieme a quella predefinita.
     await hass.services.async_call(
         "select", "select_option", {"entity_id": SPIN, "option": "600"}, blocking=True
     )
@@ -337,7 +337,7 @@ async def test_start_clamps_spin_to_program_default(hass: HomeAssistant, aioclie
         "select", "select_option", {"entity_id": SPIN, "option": "1300"}, blocking=True
     )
     cmd = (
-        "Write=1&Pa=0&Sel=0&PrNm=3&StSt=1&SpdTgt=8&SpdDef=8"
+        "Write=1&Pa=0&Sel=0&PrNm=3&StSt=1"
         "&Stm=0&RecipeId=0&CheckUpState=0"
     )
     aioclient_mock.get(write_url(cmd), text=reply())
@@ -389,3 +389,30 @@ async def test_stop_and_rejected_command(hass: HomeAssistant, aioclient_mock, mo
         await hass.services.async_call(
             "button", "press", {"entity_id": STOP}, blocking=True
         )
+
+
+async def test_delayed_start_sends_delay_without_start_flag(
+    hass: HomeAssistant, aioclient_mock, monkeypatch
+) -> None:
+    """Con un ritardo il comando è DelMd=1&DelVl=<ore>, senza StSt=1."""
+    entry = await setup_control(hass, aioclient_mock, monkeypatch, SELECTED)
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": "number.lavatrice_start_delay", "value": 2},
+        blocking=True,
+    )
+    cmd = (
+        "Write=1&Pa=0&Sel=0&PrNm=3&DelMd=1&DelVl=2"
+        "&Stm=0&RecipeId=0&CheckUpState=0"
+    )
+    aioclient_mock.get(write_url(cmd), text=reply())
+    await hass.services.async_call("button", "press", {"entity_id": START}, blocking=True)
+    assert writes(aioclient_mock) == [cmd]
+    assert entry.runtime_data.delay_hours == 2
+
+
+async def test_zero_delay_starts_now(hass: HomeAssistant, aioclient_mock, monkeypatch) -> None:
+    await setup_control(hass, aioclient_mock, monkeypatch, SELECTED)
+    cmd = "Write=1&Pa=0&Sel=0&PrNm=3&StSt=1&Stm=0&RecipeId=0&CheckUpState=0"
+    aioclient_mock.get(write_url(cmd), text=reply())
+    await hass.services.async_call("button", "press", {"entity_id": START}, blocking=True)
+    assert writes(aioclient_mock) == [cmd]

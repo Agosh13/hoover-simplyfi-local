@@ -119,6 +119,7 @@ Off by default. To switch them on: integration → **Configure** → pick a list
 |---|---|
 | Program to start | selects the program on the machine, **without starting it**; temperature, spin and duration of that program then show up in the sensors |
 | Spin speed to start | spin for the next start; *Program default* unless you lower it (it is never raised above the program's default) |
+| Start delay | hours before the start, 0 to 24; 0 starts at once. The washer holds the delay and starts by itself |
 | Start | starts the selected program |
 | Stop | stops the cycle |
 
@@ -132,10 +133,10 @@ How it works in practice:
 
 Limits of this first version:
 
-- the **temperature** is always the program's default; options and delayed
-  start are not available;
-- **Stop** uses the command the official app sends, but it has not been
-  verified during a real cycle yet;
+- the **temperature** is always the program's default; options are not available;
+- **Stop** uses the command the official app sends. It cancels a start delay
+  (verified on the display); it has not been verified during a running wash;
+- a delayed start has not been verified to run to its end yet;
 - only for models with a known dial (see below).
 
 You are starting a real appliance remotely: read the [disclaimer](#disclaimer).
@@ -241,8 +242,8 @@ experimental and any release may contain breaking changes. See the
 - Alpha: one tested model, a few hours of real use.
 - The end of a real cycle has been verified only in automated tests with
   simulated data; behaviour at the end of a cycle may differ between models.
-- Commands are experimental: program, spin, start and stop only. No
-  temperature change, no options, no delayed start, no statistics.
+- Commands are experimental: program, spin, start delay, start and stop.
+  No temperature change, no options, no statistics.
 - Program names are known for one model family only.
 - Polls every 30 seconds, so changes show up with that delay.
 

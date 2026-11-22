@@ -150,6 +150,11 @@
       "stop": {
         "name": "Stop"
       }
+    },
+    "number": {
+      "delay": {
+        "name": "Ritardo di partenza"
+      }
     }
   },
   "options": {

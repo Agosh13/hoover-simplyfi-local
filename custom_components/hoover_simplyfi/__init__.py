@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from .coordinator import SimplyFiConfigEntry, SimplyFiCoordinator
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
-CONTROL_PLATFORMS = [Platform.BUTTON, Platform.SELECT]
+CONTROL_PLATFORMS = [Platform.BUTTON, Platform.NUMBER, Platform.SELECT]
 
 
 def _platforms(coordinator: SimplyFiCoordinator) -> list[Platform]:

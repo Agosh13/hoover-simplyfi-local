@@ -46,6 +46,9 @@ REMOTE_POSITIONS: dict[str, int] = {"hoover_link_pro": 15}
 SPIN_DEFAULT = "default"
 SPIN_CHOICES = (0, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
 
+# Ritardo di partenza in ore, come nel protocollo documentato (1-24).
+DELAY_MAX_HOURS = 24
+
 # Attesa dopo un comando prima di rileggere lo stato.
 COMMAND_SETTLE = 2.0
 

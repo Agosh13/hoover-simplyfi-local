@@ -155,5 +155,5 @@ class SimplyFiClient:
             response = json.loads(body).get("response")
         except (ValueError, AttributeError) as err:
             raise SimplyFiProtocolError("Risposta non valida") from err
-        if response != "SUCCESS":
+        if str(response).upper() != "SUCCESS":
             raise SimplyFiCommandError(f"Comando rifiutato: {response}")

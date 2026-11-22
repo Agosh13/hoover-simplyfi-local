@@ -4,6 +4,28 @@ All notable changes to this project are listed here. Versions follow
 `MAJOR.MINOR.PATCH`; while the project is `0.x` it is experimental and any
 release may contain breaking changes.
 
+## 0.4.2 — 2026-11-22
+
+### Added
+
+- **Start delay** (experimental, with commands enabled): a *Start delay* entity
+  in whole hours, 0 to 24. With a delay the start command is
+  `DelMd=1&DelVl=<hours>` and no `StSt=1`, as the official app sends it; the
+  washer holds the countdown and starts by itself. Checked on the Hoover
+  LINK PRO: the countdown appeared and the Stop of the app cancelled it.
+  Whether the wash then starts on its own is not yet verified.
+
+## 0.4.1 — 2026-11-14
+
+### Changed
+
+- The start command now carries the spin speed only when it differs from the
+  program's default, as the official app does, and never for programs without
+  a spin. Checked against the app's command builder as documented by the
+  openHAB Candy binding.
+- The reply to a command is accepted regardless of letter case (`SUCCESS` /
+  `success`).
+
 ## 0.4.0 — 2026-11-14
 
 ### Added
